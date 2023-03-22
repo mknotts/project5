@@ -27,8 +27,10 @@ kinit(void)
 
   initlock(&kmem.lock, "kmem");
   p = (char*)PGROUNDUP((uint)end);
-  for(; p + PGSIZE <= (char*)PHYSTOP; p += PGSIZE)
+  for(; p + PGSIZE <= (char*)PHYSTOP; p += PGSIZE){
     kfree(p);
+    ++kmem.free_pages; //ADDED  using struct itself so use "."
+  }
 }
 
 // Free the page of physical memory pointed at by v,
@@ -50,6 +52,7 @@ kfree(char *v)
   r = (struct run*)v;
   r->next = kmem.freelist;
   kmem.freelist = r;
+  ++kmem.free_pages; //ADDED
   release(&kmem.lock);
 }
 
@@ -63,9 +66,21 @@ kalloc(void)
 
   acquire(&kmem.lock);
   r = kmem.freelist;
-  if(r)
+  if(r){
     kmem.freelist = r->next;
+    --kmem.free_pages;  //ADDED
+  }
   release(&kmem.lock);
   return (char*)r;
+}
+
+int
+getFreePagesCount(void) //ADDED
+{
+  acquire(&kmem.lock);
+  int v = kmem.free_pages;
+  release(&kmem.lock);
+
+  return v;
 }
 
