@@ -304,17 +304,17 @@ copyuvm(pde_t *pgdir, uint sz)
   uint pa, i;
   char *mem;
 
-  if((d = setupkvm()) == 0)
+  if((d = setupkvm()) == 0) // checking for error w setup
     return 0;
   for(i = 0; i < sz; i += PGSIZE){
     if((pte = walkpgdir(pgdir, (void*)i, 0)) == 0)
       panic("copyuvm: pte should exist");
-    if(!(*pte & PTE_P))
+    if(!(*pte & PTE_P)) // *(pte & PTE_P) gets the present bit, can do something similar for write bit
       panic("copyuvm: page not present");
     pa = PTE_ADDR(*pte);
-    if((mem = kalloc()) == 0)
+    if((mem = kalloc()) == 0) // creation of deep copy with kalloc()
       goto bad;
-    memmove(mem, (char*)pa, PGSIZE);
+    memmove(mem, (char*)pa, PGSIZE); // copies state of parent into newly allocated mem
     if(mappages(d, (void*)i, PGSIZE, PADDR(mem), PTE_W|PTE_U) < 0)
       goto bad;
   }
@@ -325,6 +325,35 @@ bad:
   return 0;
 }
 
+/*
+// Given a parent process's page table, set each page to read only & 
+// refrain from copying it into child's memory
+pde_t*
+cowuvm(pde_t *pgdir, uint sz)
+{
+  pde_t *d;
+  pte_t *pte;
+  uint pa, i;
+  char *mem;
+
+  if((d = setupkvm()) == 0) // checking for error w setup
+    return 0;
+  for(i = 0; i < sz; i += PGSIZE){
+    if((pte = walkpgdir(pgdir, (void*)i, 0)) == 0)
+      panic("copyuvm: pte should exist");
+    if(!(*pte & PTE_P)) // *(pte & PTE_P) gets the present bit, can do something similar for write bit
+      panic("copyuvm: page not present");
+    // increment number of references for PTE, should have a new bit in mmu.h that can be incremented
+
+    // set PTE_W to 0, will need to use bitwise logic (maybe just PTE_P & 0?)
+
+    // flush TLB
+    // lcr3(PADDR(pgdir));
+
+  }
+  return d;
+}
+*/
 // Map user virtual address to kernel physical address.
 char*
 uva2ka(pde_t *pgdir, char *uva)
