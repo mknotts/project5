@@ -15,6 +15,10 @@ struct run {
 struct {
   struct spinlock lock;
   struct run *freelist;
+
+  uint free_pages;
+  uint ref_cnt[PHYSTOP / PGSIZE];
+
 } kmem;
 
 extern char end[]; // first address after kernel loaded from ELF file

@@ -66,7 +66,7 @@ void            ioapicinit(void);
 char*           kalloc(void);
 void            kfree(char*);
 void            kinit(void);
-void			getFreePagesCount(void);
+int			getFreePagesCount(void);
 
 // kbd.c
 void            kbdintr(void);
